@@ -18,7 +18,7 @@ inputs:
     required: false
     default: ""
   tag_format:
-    description: "Tag format: 'service-date-branch-counter' (default), 'branch-date-counter', 'branch-date', or 'date-branch'. All formats support underscore aliases (e.g., 'branch_date_counter')"
+    description: "Tag format: 'service-date-branch-counter' (default), 'service-branch-date-counter', 'branch-date-counter', 'branch-date', or 'date-branch'. All formats support underscore aliases (e.g., 'branch_date_counter')"
     required: false
     default: "service-date-branch-counter"
   max_length:
@@ -169,6 +169,13 @@ runs:
                 TAG="${DATE}_${TRUNCATED_BRANCH}"
               fi
               ;;
+            "service-branch-date-counter"|"service_branch_date_counter"|"service-branch-date"|"service_branch_date")
+              if [ -n "$TRUNCATED_SERVICE" ]; then
+                TAG="${TRUNCATED_SERVICE}_${TRUNCATED_BRANCH}_${DATE}"
+              else
+                TAG="${TRUNCATED_BRANCH}_${DATE}"
+              fi
+              ;;
             "branch-date"|"branch_date"|"branch-date-counter"|"branch_date_counter")
               TAG="${TRUNCATED_BRANCH}_${DATE}"
               ;;
@@ -177,7 +184,7 @@ runs:
               ;;
             *)
               echo "❌ Invalid TAG_FORMAT: $TAG_FORMAT"
-              echo "Valid formats: service-date-branch, branch-date, date-branch (variants: with or without counter suffix, with _ or - separator)"
+              echo "Valid formats: service-date-branch, service-branch-date, branch-date, date-branch (variants: with or without counter suffix, with _ or - separator)"
               exit 1
               ;;
           esac

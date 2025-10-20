@@ -75,6 +75,12 @@ The action generates tags in different formats based on your needs:
 - **Without service_name**: `{date}_{branch}_{counter}`
   - Example: `2024-01-15_main_00`
 
+#### `service-branch-date-counter`
+- **With service_name**: `{service}_{branch}_{date}_{counter}`
+  - Example: `api-gateway_main_2024-01-15_00`
+- **Without service_name**: `{branch}_{date}_{counter}`
+  - Example: `main_2024-01-15_00`
+
 #### `branch-date-counter`
 - Format: `{branch}_{date}_{counter}`
 - Example: `feature-login_2024-01-15_00`
@@ -152,6 +158,15 @@ Here are examples showing exactly what tags will be generated with different inp
 **Result**: `web_2024-01-15_main_01` (counter incremented)
 
 ### Different Tag Formats
+```yaml
+# Service-Branch-Date format with counter
+- uses: koalaops/determine-image-tag@v1
+  with:
+    service_name: api
+    tag_format: service-branch-date-counter
+```
+**Result**: `api_main_2024-01-15_00`
+
 ```yaml
 # Branch-Date format with counter
 - uses: koalaops/determine-image-tag@v1
