@@ -2,7 +2,7 @@ name: Determine Image Tag
 description: |
   Generates consistent image tags for builds and releases.
   Supports multiple tag formats and handles duplicate prevention.
-author: "KoalaOps"
+author: "Skyhook"
 
 branding:
   icon: "tag"
