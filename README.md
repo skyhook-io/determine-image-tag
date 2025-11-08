@@ -17,7 +17,7 @@ A GitHub Action that generates consistent, unique image tags for container build
 
 ```yaml
 - name: Determine Image Tag
-  uses: koalaops/determine-image-tag@v1
+  uses: skyhook-io/determine-image-tag@v1
   id: tag
   with:
     service_name: my-service
@@ -32,7 +32,7 @@ A GitHub Action that generates consistent, unique image tags for container build
 
 ```yaml
 - name: Generate Tag for Production
-  uses: koalaops/determine-image-tag@v1
+  uses: skyhook-io/determine-image-tag@v1
   id: tag
   with:
     service_name: api-gateway
@@ -45,7 +45,7 @@ A GitHub Action that generates consistent, unique image tags for container build
 
 ```yaml
 - name: Use Custom Tag
-  uses: koalaops/determine-image-tag@v1
+  uses: skyhook-io/determine-image-tag@v1
   id: tag
   with:
     custom_tag: v1.2.3-release
@@ -118,14 +118,14 @@ Here are examples showing exactly what tags will be generated with different inp
 
 ### Default Configuration
 ```yaml
-- uses: koalaops/determine-image-tag@v1
+- uses: skyhook-io/determine-image-tag@v1
   # No inputs provided
 ```
 **Result**: `2024-01-15_main_00` (assuming main branch, first build of the day)
 
 ### With Service Name
 ```yaml
-- uses: koalaops/determine-image-tag@v1
+- uses: skyhook-io/determine-image-tag@v1
   with:
     service_name: api-gateway
 ```
@@ -133,7 +133,7 @@ Here are examples showing exactly what tags will be generated with different inp
 
 ### Feature Branch
 ```yaml
-- uses: koalaops/determine-image-tag@v1
+- uses: skyhook-io/determine-image-tag@v1
   with:
     service_name: auth
     # On branch: feature/user-login
@@ -143,7 +143,7 @@ Here are examples showing exactly what tags will be generated with different inp
 ### Multiple Builds Same Day
 ```yaml
 # First build
-- uses: koalaops/determine-image-tag@v1
+- uses: skyhook-io/determine-image-tag@v1
   with:
     service_name: web
 ```
@@ -151,7 +151,7 @@ Here are examples showing exactly what tags will be generated with different inp
 
 ```yaml
 # Second build (same day)
-- uses: koalaops/determine-image-tag@v1
+- uses: skyhook-io/determine-image-tag@v1
   with:
     service_name: web
 ```
@@ -160,7 +160,7 @@ Here are examples showing exactly what tags will be generated with different inp
 ### Different Tag Formats
 ```yaml
 # Service-Branch-Date format with counter
-- uses: koalaops/determine-image-tag@v1
+- uses: skyhook-io/determine-image-tag@v1
   with:
     service_name: api
     tag_format: service-branch-date-counter
@@ -169,7 +169,7 @@ Here are examples showing exactly what tags will be generated with different inp
 
 ```yaml
 # Branch-Date format with counter
-- uses: koalaops/determine-image-tag@v1
+- uses: skyhook-io/determine-image-tag@v1
   with:
     tag_format: branch-date-counter
 ```
@@ -177,7 +177,7 @@ Here are examples showing exactly what tags will be generated with different inp
 
 ```yaml
 # Branch-Date format without counter
-- uses: koalaops/determine-image-tag@v1
+- uses: skyhook-io/determine-image-tag@v1
   with:
     tag_format: branch-date
 ```
@@ -185,7 +185,7 @@ Here are examples showing exactly what tags will be generated with different inp
 
 ```yaml
 # Date-Branch format (no counter)
-- uses: koalaops/determine-image-tag@v1
+- uses: skyhook-io/determine-image-tag@v1
   with:
     tag_format: date-branch
     include_counter: false
@@ -194,7 +194,7 @@ Here are examples showing exactly what tags will be generated with different inp
 
 ```yaml
 # Using underscore alias
-- uses: koalaops/determine-image-tag@v1
+- uses: skyhook-io/determine-image-tag@v1
   with:
     tag_format: branch_date_counter
 ```
@@ -202,7 +202,7 @@ Here are examples showing exactly what tags will be generated with different inp
 
 ### Custom Tag Override
 ```yaml
-- uses: koalaops/determine-image-tag@v1
+- uses: skyhook-io/determine-image-tag@v1
   with:
     custom_tag: v1.2.3-rc1
 ```
@@ -210,7 +210,7 @@ Here are examples showing exactly what tags will be generated with different inp
 
 ### Using Underscore as Branch Separator
 ```yaml
-- uses: koalaops/determine-image-tag@v1
+- uses: skyhook-io/determine-image-tag@v1
   with:
     service_name: api
     branch_separator: "_"
@@ -238,7 +238,7 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Determine Image Tag
-        uses: koalaops/determine-image-tag@v1
+        uses: skyhook-io/determine-image-tag@v1
         id: tag
         with:
           service_name: my-service
@@ -261,7 +261,7 @@ jobs:
 
 ```yaml
 - name: Generate Dev Tag
-  uses: koalaops/determine-image-tag@v1
+  uses: skyhook-io/determine-image-tag@v1
   id: dev-tag
   with:
     service_name: api
@@ -269,7 +269,7 @@ jobs:
     
 - name: Generate Prod Tag
   if: github.ref == 'refs/heads/main'
-  uses: koalaops/determine-image-tag@v1
+  uses: skyhook-io/determine-image-tag@v1
   id: prod-tag
   with:
     service_name: api
@@ -285,7 +285,7 @@ strategy:
     
 steps:
   - name: Generate Tag for ${{ matrix.service }}
-    uses: koalaops/determine-image-tag@v1
+    uses: skyhook-io/determine-image-tag@v1
     id: tag
     with:
       service_name: ${{ matrix.service }}
@@ -305,7 +305,7 @@ steps:
     path: my-repo
 
 - name: Generate Tag
-  uses: koalaops/determine-image-tag@v1
+  uses: skyhook-io/determine-image-tag@v1
   id: tag
   with:
     service_name: my-service
@@ -340,4 +340,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Support
 
-For issues and feature requests, please use the [GitHub Issues](https://github.com/koalaops/determine-image-tag/issues) page.
+For issues and feature requests, please use the [GitHub Issues](https://github.com/skyhook-io/determine-image-tag/issues) page.
