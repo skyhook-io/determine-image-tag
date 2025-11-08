@@ -1,4 +1,4 @@
-name: Determine Image Tag
+name: 'Skyhook Determine Image Tag'
 description: |
   Generates consistent image tags for builds and releases.
   Supports multiple tag formats and handles duplicate prevention.
