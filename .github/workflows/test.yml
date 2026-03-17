@@ -243,8 +243,11 @@ jobs:
           git init --bare /tmp/test-remote.git
           git clone /tmp/test-remote.git /tmp/test-repo
           cd /tmp/test-repo
+          git config user.email "test@test.com"
+          git config user.name "Test"
+          git checkout -b main
           git commit --allow-empty -m "init"
-          git push origin main
+          git push -u origin main
 
           # Use a unique prefix so tests don't collide
           TEST_ID="ct-$$-$RANDOM"
