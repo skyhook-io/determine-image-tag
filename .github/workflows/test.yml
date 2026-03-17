@@ -226,6 +226,126 @@ jobs:
           
           echo "✅ Date and counter preserved correctly in truncation"
 
+  test-counter:
+    runs-on: ubuntu-latest
+    name: Test Counter Logic
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: action-src
+
+      # Build a self-contained test repo with a local bare remote so
+      # git ls-remote --tags origin works against tags we control.
+      - name: Setup test repo with local remote
+        id: setup
+        run: |
+          # Create bare "remote" and a working clone
+          git init --bare /tmp/test-remote.git
+          git clone /tmp/test-remote.git /tmp/test-repo
+          cd /tmp/test-repo
+          git commit --allow-empty -m "init"
+          git push origin main
+
+          # Use a unique prefix so tests don't collide
+          TEST_ID="ct-$$-$RANDOM"
+          echo "test_id=$TEST_ID" >> $GITHUB_OUTPUT
+          TODAY=$(date +'%Y-%m-%d')
+          echo "today=$TODAY" >> $GITHUB_OUTPUT
+
+      # --- Test 1: fresh counter starts at 01 ---
+      - name: "Counter: starts at 01 when no existing tags"
+        uses: ./action-src
+        id: fresh
+        with:
+          service_name: ${{ steps.setup.outputs.test_id }}
+          tag_format: service-branch-date-counter
+          include_counter: true
+          working_directory: /tmp/test-repo
+          branch_ref: refs/heads/main
+
+      - name: Verify fresh counter
+        run: |
+          TAG="${{ steps.fresh.outputs.tag }}"
+          echo "Fresh tag: $TAG"
+          [[ "$TAG" == *"_01" ]] || { echo "❌ Expected _01 suffix"; exit 1; }
+          echo "✅ Fresh counter starts at _01"
+
+      # --- Test 2: sequential increment (_01 exists -> _02) ---
+      - name: Push first tag to remote
+        run: |
+          cd /tmp/test-repo
+          git tag "${{ steps.fresh.outputs.tag }}"
+          git push origin "${{ steps.fresh.outputs.tag }}"
+
+      - name: "Counter: increments to 02 after 01 exists"
+        uses: ./action-src
+        id: second
+        with:
+          service_name: ${{ steps.setup.outputs.test_id }}
+          tag_format: service-branch-date-counter
+          include_counter: true
+          working_directory: /tmp/test-repo
+          branch_ref: refs/heads/main
+
+      - name: Verify increment
+        run: |
+          TAG1="${{ steps.fresh.outputs.tag }}"
+          TAG2="${{ steps.second.outputs.tag }}"
+          echo "First:  $TAG1"
+          echo "Second: $TAG2"
+          [[ "$TAG2" == *"_02" ]] || { echo "❌ Expected _02 suffix"; exit 1; }
+          [ "$TAG1" != "$TAG2" ] || { echo "❌ Tags must differ"; exit 1; }
+          echo "✅ Counter incremented to _02"
+
+      # --- Test 3: gap handling (_01 and _05 exist -> _06) ---
+      - name: Create tags with gap
+        env:
+          TEST_ID: ${{ steps.setup.outputs.test_id }}
+          TODAY: ${{ steps.setup.outputs.today }}
+        run: |
+          cd /tmp/test-repo
+          git tag "${TEST_ID}-gap_main_${TODAY}_01"
+          git tag "${TEST_ID}-gap_main_${TODAY}_05"
+          git push origin --tags
+
+      - name: "Counter: skips gap, goes to 06"
+        uses: ./action-src
+        id: gap
+        with:
+          service_name: ${{ steps.setup.outputs.test_id }}-gap
+          tag_format: service-branch-date-counter
+          include_counter: true
+          working_directory: /tmp/test-repo
+          branch_ref: refs/heads/main
+
+      - name: Verify gap handling
+        run: |
+          TAG="${{ steps.gap.outputs.tag }}"
+          echo "After gap: $TAG"
+          [[ "$TAG" == *"_06" ]] || { echo "❌ Expected _06 suffix"; exit 1; }
+          echo "✅ Counter correctly jumped past gap to _06"
+
+      # --- Test 4: counter disabled produces no suffix ---
+      - name: "Counter: disabled produces no _NN suffix"
+        uses: ./action-src
+        id: no-counter
+        with:
+          service_name: ${{ steps.setup.outputs.test_id }}-nc
+          tag_format: service-branch-date-counter
+          include_counter: false
+          working_directory: /tmp/test-repo
+          branch_ref: refs/heads/main
+
+      - name: Verify no counter
+        run: |
+          TAG="${{ steps.no-counter.outputs.tag }}"
+          echo "No-counter tag: $TAG"
+          if [[ "$TAG" =~ _[0-9][0-9]$ ]]; then
+            echo "❌ Should not have counter suffix"
+            exit 1
+          fi
+          echo "✅ No counter suffix when disabled"
+
   test-pull-request:
     runs-on: ubuntu-latest
     name: Test Pull Request Handling

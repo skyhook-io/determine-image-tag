@@ -193,25 +193,26 @@ runs:
           
           # Add counter if enabled
           if [ "$INCLUDE_COUNTER" = "true" ]; then
-            # Try to get counter from remote tags, fallback to local if remote fails
-            COUNTER=0
+            # Find the highest existing counter and increment by 1.
+            # Starts at 01 to align with create-deployment-matrix which is 1-indexed.
+            HIGHEST=""
             if git ls-remote --tags origin >/dev/null 2>&1; then
-              # Count tags that match our pattern, excluding annotated tag markers
-              COUNTER=$(git ls-remote --tags origin | grep -v '\^{}' | grep -c "refs/tags/${TAG}_[0-9][0-9]$" || true)
-              # Ensure COUNTER is set to 0 if empty
-              COUNTER=${COUNTER:-0}
+              # Find highest counter from remote tags, excluding annotated tag markers
+              HIGHEST=$(git ls-remote --tags origin | grep -v '\^{}' | grep -o "refs/tags/${TAG}_[0-9][0-9]$" | grep -o '[0-9][0-9]$' | sort -n | tail -1 || true)
             else
               echo "⚠️  Cannot access remote tags, using local tags for counter"
-              # Count local tags that match our pattern
-              COUNTER=$(git tag -l "${TAG}_[0-9][0-9]" | grep -c . || true)
-              COUNTER=${COUNTER:-0}
+              # Find highest counter from local tags
+              HIGHEST=$(git tag -l "${TAG}_[0-9][0-9]" | grep -o '[0-9][0-9]$' | sort -n | tail -1 || true)
             fi
-            
-            # Format counter with leading zero
-            COUNTER=$(printf '%02d' "$COUNTER")
+
+            if [ -n "$HIGHEST" ]; then
+              COUNTER=$(printf '%02d' $((10#$HIGHEST + 1)))
+            else
+              COUNTER="01"
+            fi
             COUNTER_SUFFIX="_${COUNTER}"
             echo "🔢 Counter: $COUNTER"
-            
+
             # Add counter suffix
             TAG="${TAG}${COUNTER_SUFFIX}"
           fi
