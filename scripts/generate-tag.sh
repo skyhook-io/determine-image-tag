@@ -107,13 +107,16 @@ fi
 # Auto-generated tag path
 # -----------------------------------------------------------------------------
 
-# Pick branch from explicit input > PR ref > github.ref
+# Pick branch from explicit input > PR ref > github.ref.
+# BRANCH_REF here is ONLY the user-supplied input (empty if not provided);
+# GITHUB_REF is the auto-set workflow var. Keeping these distinct lets us
+# prefer the PR head ref over the merge ref on pull_request runs.
 if [ -n "$BRANCH_REF" ]; then
   BRANCH=$(echo "$BRANCH_REF" | sed 's#refs/heads/##')
 elif [ -n "$PR_REF" ]; then
   BRANCH="$PR_REF"
 else
-  BRANCH=""
+  BRANCH=$(echo "${GITHUB_REF-}" | sed 's#refs/heads/##')
 fi
 # Normalise special characters
 BRANCH=$(echo "$BRANCH" | tr '/:@#' "$BRANCH_SEP")

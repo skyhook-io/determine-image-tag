@@ -70,7 +70,7 @@ runs:
         TAG_FORMAT: ${{ inputs.tag_format }}
         MAX_LENGTH: ${{ inputs.max_length }}
         INCLUDE_COUNTER: ${{ inputs.include_counter }}
-        BRANCH_REF: ${{ inputs.branch_ref || github.ref }}
+        BRANCH_REF: ${{ inputs.branch_ref }}
         PR_REF: ${{ inputs.pull_request_ref || github.event.pull_request.head.ref }}
         BRANCH_SEP: ${{ inputs.branch_separator }}
       run: |

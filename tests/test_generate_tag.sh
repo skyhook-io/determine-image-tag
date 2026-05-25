@@ -439,6 +439,42 @@ t2=$(run_gen TAG_FORMAT="branch-date"         INCLUDE_COUNTER="true" BRANCH_REF=
 check_eq "$t1" "$t2"; expect pass "'branch-date' + counter=on == 'branch-date-counter' + counter=on" $?
 
 # -----------------------------------------------------------------------------
+section "Branch source priority: BRANCH_REF > PR_REF > GITHUB_REF"
+# -----------------------------------------------------------------------------
+
+# BRANCH_REF wins when set, even if PR_REF is also set.
+tag=$(env -i PATH="$PATH" HOME="$HOME" \
+      COMMIT_HASH_OVERRIDE="abc" DATE_OVERRIDE="$DATE" HIGHEST_OVERRIDE="" \
+      TAG_FORMAT="branch-date-counter" INCLUDE_COUNTER="true" \
+      BRANCH_REF="refs/heads/explicit-branch" PR_REF="pr-branch" \
+      bash "$GEN" 2>/dev/null)
+check_eq "$tag" "explicit-branch_${DATE}_01"; expect pass "BRANCH_REF wins over PR_REF" $?
+
+# PR_REF used when BRANCH_REF empty -- regression: collapsed env passthrough
+# previously made PR_REF unreachable on PR runs.
+tag=$(env -i PATH="$PATH" HOME="$HOME" \
+      COMMIT_HASH_OVERRIDE="abc" DATE_OVERRIDE="$DATE" HIGHEST_OVERRIDE="" \
+      TAG_FORMAT="branch-date-counter" INCLUDE_COUNTER="true" \
+      PR_REF="feature/pr-head" \
+      bash "$GEN" 2>/dev/null)
+check_eq "$tag" "feature-pr-head_${DATE}_01"; expect pass "PR_REF used when BRANCH_REF empty" $?
+
+# GITHUB_REF used when both BRANCH_REF and PR_REF are empty.
+tag=$(env -i PATH="$PATH" HOME="$HOME" \
+      COMMIT_HASH_OVERRIDE="abc" DATE_OVERRIDE="$DATE" HIGHEST_OVERRIDE="" \
+      TAG_FORMAT="branch-date-counter" INCLUDE_COUNTER="true" \
+      GITHUB_REF="refs/heads/from-github-ref" \
+      bash "$GEN" 2>/dev/null)
+check_eq "$tag" "from-github-ref_${DATE}_01"; expect pass "GITHUB_REF used when BRANCH_REF and PR_REF empty" $?
+
+# All empty -> tag has no branch part (just date + counter).
+tag=$(env -i PATH="$PATH" HOME="$HOME" \
+      COMMIT_HASH_OVERRIDE="abc" DATE_OVERRIDE="$DATE" HIGHEST_OVERRIDE="" \
+      TAG_FORMAT="branch-date-counter" INCLUDE_COUNTER="true" \
+      bash "$GEN" 2>/dev/null)
+check_eq "$tag" "${DATE}_01"; expect pass "no branch sources -> tag is date+counter only" $?
+
+# -----------------------------------------------------------------------------
 section "Invalid format rejected"
 # -----------------------------------------------------------------------------
 status=0
