@@ -7,6 +7,182 @@ on:
     branches: [main]
 
 jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    name: Unit tests (tests/test_generate_tag.sh)
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run unit test harness
+        run: bash tests/test_generate_tag.sh
+
+  test-truncation-regressions:
+    runs-on: ubuntu-latest
+    name: "Regression: tag truncation bug fixes"
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- User-reported invariant ---
+      # service-branch-date-counter + counter=on should ALWAYS end with _DATE_NN.
+      - name: "User case: service-branch-date-counter + counter=on, long branch"
+        id: user-case
+        uses: ./
+        with:
+          service_name: backend
+          tag_format: service-branch-date-counter
+          include_counter: true
+          branch_ref: "refs/heads/ggg_uni-rrrr-reintrrrrr-xxxx-ttt-fff-rrtt"
+
+      - name: "Verify user case ends with _DATE_NN and fits 63 chars"
+        run: |
+          TAG="${{ steps.user-case.outputs.tag }}"
+          echo "Tag: $TAG (len=${#TAG})"
+          if [[ ! "$TAG" =~ _[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2,}$ ]]; then
+            echo "❌ Tag does not end in _DATE_NN"
+            exit 1
+          fi
+          if [ ${#TAG} -gt 63 ]; then
+            echo "❌ Tag exceeds 63 chars"
+            exit 1
+          fi
+          echo "✅ User case OK"
+
+      # --- Bug 1: trailing '-' when branch is last + counter=off + cut on '-' ---
+      # AVAIL_BRANCH for date-branch (no svc, no counter) = 52.
+      # Branch is 51 'a' + '-' + 'rest' = 56 chars. Truncating to 52 lands ON '-'.
+      # Pre-fix: tag ended in '-'. Post-fix: trailing '-' trimmed.
+      - name: "Bug 1: branch-last + counter=off + dash-cut"
+        id: bug1
+        uses: ./
+        with:
+          tag_format: date-branch
+          include_counter: false
+          branch_ref: "refs/heads/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-rest"
+
+      - name: "Verify no trailing separator (bug 1)"
+        run: |
+          TAG="${{ steps.bug1.outputs.tag }}"
+          echo "Tag: $TAG"
+          if [[ "$TAG" =~ [-_]$ ]]; then
+            echo "❌ Tag ends in separator"
+            exit 1
+          fi
+          echo "✅ No trailing separator"
+
+      # Same bug, different branch-last format.
+      - name: "Bug 1b: service-date-branch + counter=off + dash-cut"
+        id: bug1b
+        uses: ./
+        with:
+          service_name: backend
+          tag_format: service-date-branch
+          include_counter: false
+          branch_ref: "refs/heads/yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy-rest"
+
+      - name: "Verify no trailing separator (bug 1b)"
+        run: |
+          TAG="${{ steps.bug1b.outputs.tag }}"
+          echo "Tag: $TAG"
+          if [[ "$TAG" =~ [-_]$ ]]; then
+            echo "❌ Tag ends in separator"
+            exit 1
+          fi
+          echo "✅ No trailing separator"
+
+      # --- Bug 2: custom_tag truncation cuts on '-' ---
+      - name: "Bug 2: custom_tag truncation at '-'"
+        id: bug2
+        uses: ./
+        with:
+          custom_tag: "aaaaa-bbbbb-ccccc-ddddd-eeeee"
+          max_length: "18"
+
+      - name: "Verify no trailing separator (bug 2)"
+        run: |
+          TAG="${{ steps.bug2.outputs.tag }}"
+          echo "Tag: $TAG (len=${#TAG})"
+          if [[ "$TAG" =~ [-_]$ ]]; then
+            echo "❌ Custom tag ends in separator"
+            exit 1
+          fi
+          if [ ${#TAG} -gt 18 ]; then
+            echo "❌ Custom tag exceeds max_length"
+            exit 1
+          fi
+          echo "✅ Custom tag OK"
+
+      # --- Bug 3: tiny max_length used to produce '__' / overflow ---
+      - name: "Bug 3: service format + tiny max_length"
+        id: bug3
+        uses: ./
+        with:
+          service_name: some-service
+          tag_format: service-branch-date-counter
+          include_counter: true
+          max_length: "30"
+          branch_ref: "refs/heads/feature-some-long-branch-name"
+
+      - name: "Verify no '__' and within max_length (bug 3)"
+        run: |
+          TAG="${{ steps.bug3.outputs.tag }}"
+          echo "Tag: $TAG (len=${#TAG})"
+          if [[ "$TAG" == *"__"* ]]; then
+            echo "❌ Tag contains '__' double separator"
+            exit 1
+          fi
+          if [ ${#TAG} -gt 30 ]; then
+            echo "❌ Tag exceeds max_length=30"
+            exit 1
+          fi
+          echo "✅ Tiny max_length OK"
+
+      # --- Bug 4: max_length too small for fixed parts should error ---
+      - name: "Bug 4: max_length too small errors out"
+        id: bug4
+        continue-on-error: true
+        uses: ./
+        with:
+          tag_format: date-branch-counter
+          include_counter: true
+          max_length: "10"
+
+      - name: "Verify previous step failed (bug 4)"
+        run: |
+          if [ "${{ steps.bug4.outcome }}" = "success" ]; then
+            echo "❌ Action should have failed with max_length=10"
+            exit 1
+          fi
+          echo "✅ Action correctly errored on max_length too small"
+
+      # --- Bug 5: SERVICE_NAME must not affect tag when format ignores service ---
+      - name: "Bug 5a: branch-date with SERVICE_NAME"
+        id: bug5a
+        uses: ./
+        with:
+          service_name: some-service
+          tag_format: branch-date-counter
+          max_length: "30"
+          branch_ref: "refs/heads/feature-auth-rewrite-token-issuer"
+
+      - name: "Bug 5b: branch-date without SERVICE_NAME"
+        id: bug5b
+        uses: ./
+        with:
+          tag_format: branch-date-counter
+          max_length: "30"
+          branch_ref: "refs/heads/feature-auth-rewrite-token-issuer"
+
+      - name: "Verify SERVICE_NAME has no effect on branch-date"
+        run: |
+          T1="${{ steps.bug5a.outputs.tag }}"
+          T2="${{ steps.bug5b.outputs.tag }}"
+          echo "with service:    $T1"
+          echo "without service: $T2"
+          if [ "$T1" != "$T2" ]; then
+            echo "❌ SERVICE_NAME affected branch-date output"
+            exit 1
+          fi
+          echo "✅ SERVICE_NAME correctly ignored"
+
   test-basic:
     runs-on: ubuntu-latest
     name: Test Basic Tag Generation
