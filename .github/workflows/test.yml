@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Unit tests (tests/test_generate_tag.sh)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Run unit test harness
         run: bash tests/test_generate_tag.sh
 
@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     name: "Regression: tag truncation bug fixes"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # --- User-reported invariant ---
       # service-branch-date-counter + counter=on should ALWAYS end with _DATE_NN.
@@ -187,7 +187,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Test Basic Tag Generation
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       
       - name: Test with service name
         uses: ./
@@ -216,7 +216,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Test Different Tag Formats
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       
       - name: Test branch-date-counter format
         uses: ./
@@ -246,7 +246,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Test Custom Tag
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       
       - name: Test with custom tag
         uses: ./
@@ -270,7 +270,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Test Custom Branch Separator
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       
       - name: Test with underscore separator and mock branch
         uses: ./
@@ -301,7 +301,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Test Length Limits
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       
       - name: Test with long service name
         uses: ./
@@ -406,7 +406,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Test Counter Logic
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: action-src
 
@@ -530,7 +530,7 @@ jobs:
     name: Test Pull Request Handling
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       
       - name: Test PR branch detection
         uses: ./
